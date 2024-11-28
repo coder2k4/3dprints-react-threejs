@@ -1,14 +1,8 @@
-/*************  ✨ Codeium Command 🌟  *************/
-feat: Add Highlights component with GSAP animations
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { rightImg, watchImg } from './../utils/index';
 import VideoCarousel from './VideoCarousel';
 
-- Implemented Highlights component using GSAP for animations.
-- Added animations for title and links with staggered effect.
-- Integrated VideoCarousel component within the Highlights section.
-- Utilized images from utils for visual elements in links.
 const Highlights = () => {
 	useGSAP(() => {
 		gsap.to('#title', { opacity: 1, y: 0 });
@@ -43,5 +37,3 @@ const Highlights = () => {
 };
 
 export default Highlights;
-
-/******  8f778f04-be23-4125-a7d2-1e583d02477d  *******/
