@@ -7,6 +7,7 @@ import { pauseImg, playImg, replayImg } from './../utils/index';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
+
 const VideoCarousel = () => {
 	// Рефы для доступа к DOM элементам видео и индикаторов прогресса
 	const videoRef = useRef([]);
@@ -57,25 +58,40 @@ const VideoCarousel = () => {
 		let span = videoSpanRef.current;
 
 		if (span[videoId]) {
-			// Анимация прогресс-бара
+			// Set all spans except current to 12px
+			videoDivRef.current.forEach((div, index) => {
+				if (index !== videoId) {
+					gsap.to(div, {
+						width: '12px',
+						duration: 0.3,
+					});
+					gsap.to(videoSpanRef.current[index], {
+						backgroundColor: '#afafaf',
+						width: '100%',
+					});
+				} else {
+					// Set current video span to responsive width
+					gsap.to(div, {
+						width:
+							window.innerWidth < 760
+								? '10vw'
+								: window.innerWidth < 1200
+								? '10vw'
+								: '4vw',
+						duration: 0.3,
+					});
+				}
+			});
+
 			let anim = gsap.to(span[videoId], {
+				duration: hightlightsSlides[videoId].videoDuration,
 				onUpdate: () => {
 					const progress = Math.ceil(anim.progress() * 100);
 
 					if (progress != currentProgress) {
 						currentProgress = progress;
 
-						// Адаптивная ширина индикатора
-						gsap.to(videoDivRef.current, {
-							width:
-								window.innerWidth < 760
-									? '10vw'
-									: window.innerWidth < 1200
-									? '10vw'
-									: '4vw',
-						});
-
-						// Анимация заполнения прогресс-бара
+						// Анимация заполнения прогресс-бара только для текущего видео
 						gsap.to(span[videoId], {
 							width: `${currentProgress}%`,
 							backgroundColor: 'white',
@@ -83,12 +99,13 @@ const VideoCarousel = () => {
 					}
 				},
 				onComplete: () => {
-					if (isPlaying) {
+					if (isPlaying && videoRef.current[videoId]?.ended) {
 						gsap.to(videoDivRef.current[videoId], {
 							width: '12px',
 						});
 						gsap.to(span[videoId], {
 							backgroundColor: '#afafaf',
+							width: '100%',
 						});
 					}
 				},
@@ -154,6 +171,29 @@ const VideoCarousel = () => {
 	// Обработчик загрузки метаданных видео
 	const handleLoadedMetaData = (i, e) => setLoadedData(pre => [...pre, e]);
 
+	const handleVideoClick = index => {
+		// Set all spans to 12px first
+		videoDivRef.current.forEach((div, i) => {
+			gsap.to(div, {
+				width: '12px',
+				duration: 0.3,
+			});
+			gsap.to(videoSpanRef.current[i], {
+				backgroundColor: '#afafaf',
+				width: '100%',
+			});
+		});
+
+		setVideo(prev => ({
+			...prev,
+			videoId: index,
+			isPlaying: true,
+			isLastVideo: false,
+			isEnd: false,
+		}));
+		videoRef.current[index].currentTime = 0;
+	};
+
 	return (
 		<>
 			{/* Контейнер слайдера */}
@@ -178,6 +218,17 @@ const VideoCarousel = () => {
 									}
 									onPlay={() => setVideo(pre => ({ ...pre, isPlaying: true }))}
 									onLoadedMetadata={e => handleLoadedMetaData(i, e)}
+									onTimeUpdate={() => {
+										if (videoRef.current[videoId]?.ended) {
+											gsap.to(videoDivRef.current[videoId], {
+												width: '12px',
+											});
+											gsap.to(videoSpanRef.current[videoId], {
+												backgroundColor: '#afafaf',
+												width: '100%',
+											});
+										}
+									}}
 								>
 									<source src={list.video} type='video/mp4' />
 								</video>
@@ -204,6 +255,11 @@ const VideoCarousel = () => {
 							key={i}
 							className='mx-2 w-3 h-3 bg-gray-200 rounded-full relative cursor-pointer'
 							ref={el => (videoDivRef.current[i] = el)}
+							onClick={() => handleVideoClick(i)}
+							role='button'
+							tabIndex={0}
+							aria-label={`Play video ${i + 1}`}
+							onKeyDown={e => e.key === 'Enter' && handleVideoClick(i)}
 						>
 							<span
 								className='absolute h-full w-full rounded-full'
